@@ -1,5 +1,6 @@
 
 const isChar = (x) => /[a-zA-Z]/.test(x);
+const isNum = (x) => /[0-9]/.test(x);
 
 class Parser {
   constructor(options) {
@@ -8,6 +9,7 @@ class Parser {
 
   error(msg) {
     console.error(`Syntax Error: ${msg.replaceAll('\n', '\\n')} at line ${this.line}:${this.col}`);
+    console.trace();
     process.exit(1);
   }
 
@@ -33,7 +35,6 @@ class Parser {
       this.error(`Expected ${char} to be valid according to ${expected}`);
     }
 
-    console.log(this.pos);
     this.pos++;
 
     if (char === '\n') {
@@ -48,44 +49,73 @@ class Parser {
 
   text() {
     let ret = '';
-    console.log(this.peek(), isChar(this.peek()))
-    while (isChar(this.peek())) {
+    while (!this.done() && isChar(this.peek())) {
       ret += this.eat();
     }
     return ret;
   }
 
   ruleName() {
-    const name = this.text();
-    return name;
+    return this.text();
+  }
+
+  integer() {
+    const digits = this.eat();
+    while (!this.done() && isNum(this.peek())) {
+      digits += this.peek();
+    }
+    return Number.parseInt(digits, 10);
+  }
+
+  quotedString() {
+    this.eat('"');
+    const string = this.text();
+    this.eat('"');
+    return string;
   }
 
   value() {
     if (this.peek() === '"') {
       return {
-        literal: this.quotedLiteral(),
+        type: 'literal',
+        literal: this.quotedString(),
+      }
+    } else if (isNum(this.peek())) {
+      return {
+        type: 'literal',
+        literal: this.integer(),
       }
     } else {
       return {
-        rule: this.ruleName(),
+        type: 'rule',
+        value: this.text(),
       };
     }
   }
 
   values() {
     const values = [this.value()];
-    while (this.peek() !== '\n') {
-      values.push();
+    this.optionalWhitespace();
+    while (!this.done() && this.peek() === '|') {
+      this.eat('|');
+      this.optionalWhitespace();
+      values.push(this.value());
+      this.optionalWhitespace();
+      if (this.peek() === '\n') {
+        break;
+      }
     }
     return values;
   }
   
   rule() {
-    console.log('rule');
     const name = this.ruleName();
+    console.log('Parsing rule', name)
     this.optionalWhitespace();
     this.eat('=');
+    this.optionalWhitespace();
     const values = this.values();
+    console.log(106, name, values)
     return {
       name,
       values,
@@ -93,31 +123,37 @@ class Parser {
   }
   
   comment() {
-    while (this.peek() !== '\n') {
+    while (!this.done() && this.peek() !== '\n') {
       this.eat();
     }
     this.eat('\n');
   }
-  
-  grammar() {
-    this.optionalWhitespace();
-    const rules = [this.rule()];
-
-    // while (!this.done()) {
-      // if (this.peek() === '#') {
-      //   this.comment();
-      //   continue;
-      // }
-    // }
-
-    return rules;
-  }
     
   optionalWhitespace() {
-    if (this.peek() === ' ' || this.peek() === '\t' || this.peek() === '\n') {
+    if (this.peek() === ' ' || this.peek() === '\t') {
       this.eat();
       this.optionalWhitespace();
     }
+  }
+  
+  grammar() {
+    const grammar = {
+      rules: [],
+    };
+
+    while (!this.done()) {
+      this.optionalWhitespace();
+      if (this.peek() === '\n') {
+        this.eat();
+        continue;
+      } else if (this.peek() === '#') {
+        this.comment();
+        continue;
+      }
+      grammar.rules.push(this.rule());
+    }
+
+    return grammar;
   }
 
   parse(source) {
