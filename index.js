@@ -1,6 +1,6 @@
 
-const isChar = (x) => /[a-zA-Z]/.test(x);
-const isNum = (x) => /[0-9]/.test(x);
+const isChar = (x) => x && /[a-zA-Z]/.test(x);
+const isNum = (x) => x && /[0-9]/.test(x);
 
 class Parser {
   constructor(options) {
@@ -60,9 +60,9 @@ class Parser {
   }
 
   integer() {
-    const digits = this.eat();
+    let digits = this.eat();
     while (!this.done() && isNum(this.peek())) {
-      digits += this.peek();
+      digits += this.eat();
     }
     return Number.parseInt(digits, 10);
   }
@@ -78,12 +78,12 @@ class Parser {
     if (this.peek() === '"') {
       return {
         type: 'literal',
-        literal: this.quotedString(),
+        value: this.quotedString(),
       }
     } else if (isNum(this.peek())) {
       return {
         type: 'literal',
-        literal: this.integer(),
+        value: this.integer(),
       }
     } else {
       return {
@@ -110,12 +110,10 @@ class Parser {
   
   rule() {
     const name = this.ruleName();
-    console.log('Parsing rule', name)
     this.optionalWhitespace();
     this.eat('=');
     this.optionalWhitespace();
     const values = this.values();
-    console.log(106, name, values)
     return {
       name,
       values,
@@ -126,7 +124,10 @@ class Parser {
     while (!this.done() && this.peek() !== '\n') {
       this.eat();
     }
-    this.eat('\n');
+
+    if (this.peek() === '\n') {
+      this.eat('\n');
+    }
   }
     
   optionalWhitespace() {
@@ -143,14 +144,17 @@ class Parser {
 
     while (!this.done()) {
       this.optionalWhitespace();
+      if (this.done()) {
+        break;
+      }
+
       if (this.peek() === '\n') {
         this.eat();
-        continue;
       } else if (this.peek() === '#') {
         this.comment();
-        continue;
+      } else if (isChar(this.peek())) {
+        grammar.rules.push(this.rule());
       }
-      grammar.rules.push(this.rule());
     }
 
     return grammar;
