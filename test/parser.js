@@ -1,5 +1,5 @@
 require("chai").should();
-const Parser = require('../');
+const { Parser } = require('../lib/index.js');
 
 const parser = new Parser();
 
