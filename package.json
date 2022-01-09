@@ -1,8 +1,11 @@
 {
   "name": "kbnf",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "A context-free-grammar to define rules for generating random data",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "exports": {
+    "./parser": "./lib/parser.js"
+  },
   "scripts": {
     "test": "nyc mocha"
   },
