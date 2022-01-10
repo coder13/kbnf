@@ -2,9 +2,10 @@ require("chai").should();
 const { Generator, Parser } = require('../lib/index.js');
 
 const generator = new Generator(new Parser().parse(`
-num = 1 | 2 | 3 | 4 | 5
-letter = "a" | "b" | "c"
-rule = num | letter
+<num> = 1 | 2 | 3 | 4 | 5
+<letter> = "a" | "b" | "c"
+<rule> = <num> | <letter>
+<rules> = <rule> | <rule> "," <rules>
 `));
 
 describe('Generator', function () {
@@ -14,6 +15,10 @@ describe('Generator', function () {
   });
 
   it('generates random from rule', function () {
+    generator.generate('rule').toString().should.match(/a|b|c|[0-5]/);
+  });
+
+  it('generates rule recursively', function () {
     generator.generate('rule').toString().should.match(/a|b|c|[0-5]/);
   });
 });
