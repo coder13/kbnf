@@ -1,6 +1,6 @@
 {
   "name": "kbnf",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A context-free-grammar to define rules for generating random data",
   "main": "lib/index.js",
   "exports": {
