@@ -1,0 +1,15 @@
+#!/usr/bin/env node
+
+const yargs = require('yargs/yargs')
+const { hideBin } = require('yargs/helpers')
+
+yargs(hideBin(process.argv))
+  .option('grammar', {
+    demandOption: true,
+    describe: 'the source grammar file',
+    type: 'string',
+  })
+  .command(require('./commands/generate.js'))
+  .demandCommand()
+  .help()
+  .parse();
